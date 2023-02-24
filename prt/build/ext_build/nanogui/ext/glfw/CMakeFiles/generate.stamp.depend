@@ -1,0 +1,9 @@
+# CMake generation dependency list for this directory.
+C:/office_software/cmake/share/cmake-3.25/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/office_software/cmake/share/cmake-3.25/Modules/CMakePackageConfigHelpers.cmake
+C:/office_software/cmake/share/cmake-3.25/Modules/GNUInstallDirs.cmake
+C:/office_software/cmake/share/cmake-3.25/Modules/WriteBasicConfigVersionFile.cmake
+D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/nanogui/ext/glfw/CMakeLists.txt
+D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/nanogui/ext/glfw/src/glfw3.pc.in
+D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/nanogui/ext/glfw/src/glfw3Config.cmake.in
+D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/nanogui/ext/glfw/src/glfw_config.h.in

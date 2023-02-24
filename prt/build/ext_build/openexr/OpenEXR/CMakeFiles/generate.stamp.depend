@@ -1,0 +1,6 @@
+# CMake generation dependency list for this directory.
+C:/office_software/cmake/share/cmake-3.25/Modules/CPack.cmake
+C:/office_software/cmake/share/cmake-3.25/Modules/CPackComponent.cmake
+C:/office_software/cmake/share/cmake-3.25/Modules/CheckCXXSourceCompiles.cmake
+C:/office_software/cmake/share/cmake-3.25/Templates/CPackConfig.cmake.in
+D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/openexr/OpenEXR/CMakeLists.txt
