@@ -1,8 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/office_software/cmake/share/cmake-3.25/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/CheckCXXCompilerFlag.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/CheckCXXSourceCompiles.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/Internal/CheckCompilerFlag.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/Internal/CheckFlagCommonConfig.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/Internal/CheckSourceCompiles.cmake
-D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/CMakeLists.txt
