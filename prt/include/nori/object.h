@@ -146,7 +146,6 @@ public:
         return (*m_constructors)[name](propList);
     }
 private:
-    // 静态私有成员，它的内容共享为所有该类的实例，即便不创建实例，也会在编译时开辟该空间，因此在任何时候register之后都可以再create
     static std::map<std::string, Constructor> *m_constructors;
 };
 

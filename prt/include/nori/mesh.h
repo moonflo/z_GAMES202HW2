@@ -45,9 +45,12 @@ struct Intersection {
     Frame geoFrame;
     /// Pointer to the associated mesh
     const Mesh *mesh;
-
+    /// A baryCentrice interpolation method factor set, it contains alpha, beta and theta
     Vector3f bary;
 
+    // tri_index was derived from the index of the triangle which intersection with a ray, 
+    // when we have a indice_index indicate a triangle, tri_index are the vertex_index of 
+    // its 3 vertices.
     Point3f tri_index;
 
     /// Create an uninitialized intersection record

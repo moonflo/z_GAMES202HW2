@@ -37,11 +37,6 @@ NORI_NAMESPACE_BEGIN
  *
  * http://graphics.stanford.edu/~mmp/chapters/pbrt_chapter7.pdf
  * 
- * 【翻译】通用径向对称图像重建滤波器。当将辐射值样本添加到渲染图像时，
- * Nori首先使用所谓的图像重建滤波器对它们进行卷积。要了解有关重建滤波器和采样理论
- * 的更多信息，请查看PBRT的精彩第7章，该章节可在以下网址免费获得：
- * http://graphics.stanford.edu/~mmp/chapters/pbrt_chapter7.pdf
- * 有四种滤波方法，在对应的.cpp文件中实现了，本类是它们的基类。
  */
 class ReconstructionFilter : public NoriObject {
 public:

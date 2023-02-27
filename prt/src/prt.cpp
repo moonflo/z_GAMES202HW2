@@ -87,7 +87,6 @@ namespace ProjEnv
         return angle;
     }
 
-    // template <typename T> T ProjectSH() {}
 
     template <size_t SHOrder>
     std::vector<Eigen::Array3f> PrecomputeCubemapSH(const std::vector<std::unique_ptr<float[]>>& images,
@@ -96,6 +95,8 @@ namespace ProjEnv
     {
         std::vector<Eigen::Vector3f> cubemapDirs;
         cubemapDirs.reserve(6 * width * height);
+
+        // For each pixel on the cubemap, calculate its direction vector pointing to the center of the sphere
         for (int i = 0; i < 6; i++)
         {
             Eigen::Vector3f faceDirX = cubemapFaceDirections[i][0];
@@ -112,23 +113,36 @@ namespace ProjEnv
                 }
             }
         }
+
+        // Prepare a vector for SHCoeffs, each one of them is a 3D vector
         constexpr int SHNum = (SHOrder + 1) * (SHOrder + 1);
         std::vector<Eigen::Array3f> SHCoeffiecents(SHNum);
         for (int i = 0; i < SHNum; i++)
             SHCoeffiecents[i] = Eigen::Array3f(0);
-        float sumWeight = 0;
-        for (int i = 0; i < 6; i++)
+
+        // SumWeight is a factor should be area / num_samples ?
+        // float sumWeight = 0;
+        for (int i = 0; i < 6; i++) // For every patch
         {
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < height; y++) // For every pixel
             {
                 for (int x = 0; x < width; x++)
                 {
                     // TODO: here you need to compute light sh of each face of cubemap of each pixel
-                    // TODO: 此处你需要计算每个像素下cubemap某个面的球谐系数
                     Eigen::Vector3f dir = cubemapDirs[i * width * height + y * width + x];
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
                         images[i][index + 2]);
+
+                    float deltaW = CalcArea(x, y, width, height);
+
+                    for(int l = 0; l <= SHOrder; l++)
+                        for (int m = -l; m <= l; m++)
+                        {
+                            Eigen::Vector3d newDir(dir.x(), dir.y(), dir.z()); 
+                            double SHBasicFucValue = sh::EvalSH(l, m, newDir.normalized());
+                            SHCoeffiecents[sh::GetIndex(l, m)] += SHBasicFucValue * Le * deltaW;
+                        }
                 }
             }
         }
@@ -139,8 +153,13 @@ namespace ProjEnv
 class PRTIntegrator : public Integrator
 {
 public:
+    
     static constexpr int SHOrder = 2;
     static constexpr int SHCoeffLength = (SHOrder + 1) * (SHOrder + 1);
+
+    // Albedo usually should be passed to BRDF diffuse object, it's a 3D vector. I set it to 0.5 For convenience
+    static constexpr float albedo = 0.5f;
+    static constexpr float Pi = 3.1415926f;
 
     enum class Type
     {
@@ -176,7 +195,6 @@ public:
 
     virtual void preprocess(const Scene* scene) override
     {
-
         // Here only compute one mesh
         const auto mesh = scene->getMeshes()[0];
         // Projection environment
@@ -189,47 +207,152 @@ public:
         std::vector<std::unique_ptr<float[]>> images =
             ProjEnv::LoadCubemapImages(cubePath.str(), width, height, channel);
         auto envCoeffs = ProjEnv::PrecomputeCubemapSH<SHOrder>(images, width, height, channel);
+
+        // Resize a matrix, make it shape 3x9
         m_LightCoeffs.resize(3, SHCoeffLength);
         for (int i = 0; i < envCoeffs.size(); i++)
         {
+            // Write envCoeffs on Light.txt and store it in m_LightCoeffs, in colMajor.
             lightFout << (envCoeffs)[i].x() << " " << (envCoeffs)[i].y() << " " << (envCoeffs)[i].z() << std::endl;
             m_LightCoeffs.col(i) = (envCoeffs)[i];
         }
         std::cout << "Computed light sh coeffs from: " << cubePath.str() << " to: " << lightPath.str() << std::endl;
+
         // Projection transport
-        m_TransportSHCoeffs.resize(SHCoeffLength, mesh->getVertexCount());
+        m_TransportSHCoeffs.resize(SHCoeffLength, mesh->getVertexCount());  // shape 9xN, N is vertices count
         fout << mesh->getVertexCount() << std::endl;
         for (int i = 0; i < mesh->getVertexCount(); i++)
         {
-            const Point3f& v = mesh->getVertexPositions().col(i);
+            const Point3f& v = mesh->getVertexPositions().col(i);  // Vertex Point need to shader
             const Normal3f& n = mesh->getVertexNormals().col(i);
             auto shFunc = [&](double phi, double theta) -> double {
                 Eigen::Array3d d = sh::ToVector(phi, theta);
                 const auto wi = Vector3f(d.x(), d.y(), d.z());
+
+                auto cosain = wi.normalized().dot(n.normalized());
                 if (m_Type == Type::Unshadowed)
                 {
                     // TODO: here you need to calculate unshadowed transport term of a given direction
-                    // TODO: 此处你需要计算给定方向下的unshadowed传输项球谐函数值
-                    return 0;
+                    return cosain > 0 ? cosain : 0;
                 }
                 else
                 {
                     // TODO: here you need to calculate shadowed transport term of a given direction
-                    // TODO: 此处你需要计算给定方向下的shadowed传输项球谐函数值
-                    return 0;
+                    Ray3f sampleRay(v, wi);
+                    if (cosain > 0 && !scene->rayIntersect(sampleRay))
+                        return cosain;
+                    else
+                        return 0;
                 }
             };
-            auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount);
+            auto shCoeff = sh::ProjectFunction(SHOrder, shFunc, m_SampleCount); // 1x9
             for (int j = 0; j < shCoeff->size(); j++)
             {
                 m_TransportSHCoeffs.col(i).coeffRef(j) = (*shCoeff)[j];
             }
         }
+
+
         if (m_Type == Type::Interreflection)
         {
-            // TODO: leave for bonus
-        }
+            std::cout << "Using InterReflection material\n";
+            for (int bounceCount = 1; bounceCount <= m_Bounce; bounceCount++)  // For every bounce
+            {            
+                // A buffer for secondary illumnation coeffs, Not using unique_ptr 'cause it 
+                // will be add to m_TransportSHCoeffs soon.
+                Eigen::MatrixXf extraCoeffsBuffer(SHCoeffLength, mesh->getVertexCount());
 
+                int vertexCount = mesh->getVertexCount();
+                for (int i = 0; i < mesh->getVertexCount(); i++)// For every vertices
+                {
+                    std::cout << "computing interreflection light sh coeffs, current vertex idx: "
+                        << i << " total vertex idx: "<< mesh->getVertexCount() << std::endl;
+
+
+                    // Prepare infos of shading point 
+                    const Point3f& v = mesh->getVertexPositions().col(i);  // Vertex Point need to shader
+                    const Normal3f& n = mesh->getVertexNormals().col(i);
+
+                    // This is the approach demonstrated in [1] and is useful for arbitrary
+                    // functions on the sphere that are represented analytically.
+                    const int sample_side = static_cast<int>(floor(sqrt(m_SampleCount)));
+                    //std::unique_ptr<std::vector<double>> coeffs(new std::vector<double>());
+                    //coeffs->assign(GetCoefficientCount(order), 0.0);
+
+
+
+                    // A vector to store the extraCoeffs term of one singel shading point.
+                    std::unique_ptr<std::vector<double>> ExtraCoeffs(new std::vector<double>());
+                    ExtraCoeffs->assign(SHCoeffLength, 0.0);
+
+                    // Begin Monte Carlo integration sampling
+                    for (int t = 0; t < sample_side; t++)
+                    {
+                        for (int p = 0; p < sample_side; p++)
+                        {
+                            //std::cout << " Setting rD ";
+                            // generate sample_side^2 uniformly and stratified samples over the sphere
+                            // QUEASTION: should this part been put outside the loop?
+                            std::random_device rd;
+                            std::mt19937 gen(rd());
+                            std::uniform_real_distribution<> rng(0.0, 1.0);
+
+                            // Randomly sample rng, then sum it in p/sample_side to get a distribution 
+                            // that have mathematical expectation t and p
+                            double alpha = (t + rng(gen)) / sample_side;
+                            double beta = (p + rng(gen)) / sample_side;
+                            // See http://www.bogotobogo.com/Algorithms/uniform_distribution_sphere.php
+                            double phi = 2.0 * M_PI * beta;
+                            double theta = acos(2.0 * alpha - 1.0);
+
+                            //std::cout << " Prepare Ray ";
+                            // Using random phi and theta to make a sampling ray
+                            auto d = sh::ToVector(phi, theta);
+                            const auto wi = Vector3f(d.x(), d.y(), d.z());
+                            auto cosain = wi.normalized().dot(n.normalized());
+                            Ray3f sampleRay(v, wi);
+                            Intersection its;
+
+                            // If hit a triangle
+                            if (cosain > 0 && scene->rayIntersect(sampleRay, its))
+                            {
+                                //std::cout << " Hit ";
+                                Point3f idx = its.tri_index;
+                                //Point3f hitPos = its.p;
+                                Vector3f bary = its.bary;
+
+                                // Using barycentric interpolation to get extraCoeffs
+                                for (int j = 0; j < SHCoeffLength; j++)
+                                {
+                                    auto interpolateSH = (m_TransportSHCoeffs.col(idx.x()).coeffRef(j) * bary.x() +
+                                        m_TransportSHCoeffs.col(idx.y()).coeffRef(j) * bary.y() +
+                                        m_TransportSHCoeffs.col(idx.z()).coeffRef(j) * bary.z());
+
+                                    (*ExtraCoeffs)[j] += interpolateSH * cosain;
+                                }  // End of ExtraCoeffs calculation
+                            }  // End of hiting situation
+                        }
+                    }  // End of Monte Carlo integration
+
+
+                    // scale by the probability of a particular sample, which is
+                    // 4pi/sample_side^2. 4pi for the surface area of a unit sphere, and
+                    // 1/sample_side^2 for the number of samples drawn uniformly.
+                    double weight = 4.0 * M_PI / (sample_side * sample_side);
+                    for (unsigned int j = 0; j < ExtraCoeffs->size(); j++)
+                    {
+                        (*ExtraCoeffs)[j] *= weight;
+                        // Send it into buffer
+                        extraCoeffsBuffer.col(i).coeffRef(j) = (*ExtraCoeffs)[j];
+                    }
+                }  // End of one bounce calculation
+                
+                // Add one bounce coeffs
+                //std::cout << "Add it in all.";
+                m_TransportSHCoeffs = m_TransportSHCoeffs + extraCoeffsBuffer;
+            }
+        }
+        
         // Save in face format
         for (int f = 0; f < mesh->getTriangleCount(); f++)
         {
@@ -274,11 +397,11 @@ public:
         Color3f c = bary.x() * c0 + bary.y() * c1 + bary.z() * c2;
         // TODO: you need to delete the following four line codes after finishing your calculation to SH,
         //       we use it to visualize the normals of model for debug.
-        // TODO: 在完成了球谐系数计算后，你需要删除下列四行，这四行代码的作用是用来可视化模型法线
-        if (c.isZero()) {
-            auto n_ = its.shFrame.n.cwiseAbs();
-            return Color3f(n_.x(), n_.y(), n_.z());
-        }
+        // TODO: 鍦ㄥ畬鎴愪簡鐞冭皭绯绘暟璁＄畻鍚庯紝浣犻渶瑕佸垹闄や笅鍒楀洓琛岋紝杩欏洓琛屼唬鐮佺殑浣滅敤鏄敤鏉ュ彲瑙嗗寲妯″瀷娉曠嚎
+        //if (c.isZero()) {
+        //    auto n_ = its.shFrame.n.cwiseAbs();
+        //    return Color3f(n_.x(), n_.y(), n_.z());
+        //}
         return c;
     }
 

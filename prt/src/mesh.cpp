@@ -48,6 +48,10 @@ float Mesh::surfaceArea(uint32_t index) const {
     return 0.5f * Vector3f((p1 - p0).cross(p2 - p0)).norm();
 }
 
+/* 
+* Using Moller-Trumbore algorithm the cheak if a ray is intersect with a triangle 
+* u,v,t are the factors, t is the length between ray origin to triangle.
+*/
 bool Mesh::rayIntersect(uint32_t index, const Ray3f &ray, float &u, float &v, float &t) const {
     uint32_t i0 = m_F(0, index), i1 = m_F(1, index), i2 = m_F(2, index);
     const Point3f p0 = m_V.col(i0), p1 = m_V.col(i1), p2 = m_V.col(i2);

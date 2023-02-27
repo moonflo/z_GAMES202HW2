@@ -60,8 +60,7 @@ public:
 
     /**
      * \brief Intersect a ray against all triangles stored in the scene
-     * and return detailed intersection information.【翻译】输入一根光线，计算
-     * 这根光线与所有三角形的相交情况。
+     * and return detailed intersection information.
      *
      * \param ray
      *    A 3-dimensional ray data structure with minimum/maximum
