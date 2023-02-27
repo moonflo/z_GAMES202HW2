@@ -55,7 +55,7 @@ function mat4Matrix2mathMatrix(rotationMatrix){
 function getMat3ValueFromRGB(precomputeL){
 
     let colorMat3 = [];
-    for(var i = 0; i<3; i++){
+    for(var i = 0; i<4; i++){
         colorMat3[i] = mat3.fromValues( precomputeL[0][i], precomputeL[1][i], precomputeL[2][i],
 										precomputeL[3][i], precomputeL[4][i], precomputeL[5][i],
 										precomputeL[6][i], precomputeL[7][i], precomputeL[8][i] ); 
