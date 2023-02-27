@@ -43,8 +43,6 @@ namespace ProjEnv
             }
             images[i] = std::unique_ptr<float[]>(image);
             int index = (0 * 128 + 0) * channel;
-            // std::cout << images[i][index + 0] << "\t" << images[i][index + 1] << "\t"
-            //           << images[i][index + 2] << std::endl;
         }
         return images;
     }
@@ -290,7 +288,6 @@ public:
                     {
                         for (int p = 0; p < sample_side; p++)
                         {
-                            //std::cout << " Setting rD ";
                             // generate sample_side^2 uniformly and stratified samples over the sphere
                             // QUEASTION: should this part been put outside the loop?
                             std::random_device rd;
@@ -305,7 +302,6 @@ public:
                             double phi = 2.0 * M_PI * beta;
                             double theta = acos(2.0 * alpha - 1.0);
 
-                            //std::cout << " Prepare Ray ";
                             // Using random phi and theta to make a sampling ray
                             auto d = sh::ToVector(phi, theta);
                             const auto wi = Vector3f(d.x(), d.y(), d.z());
@@ -348,7 +344,6 @@ public:
                 }  // End of one bounce calculation
                 
                 // Add one bounce coeffs
-                //std::cout << "Add it in all.";
                 m_TransportSHCoeffs = m_TransportSHCoeffs + extraCoeffsBuffer;
             }
         }
@@ -395,13 +390,6 @@ public:
 
         const Vector3f& bary = its.bary;
         Color3f c = bary.x() * c0 + bary.y() * c1 + bary.z() * c2;
-        // TODO: you need to delete the following four line codes after finishing your calculation to SH,
-        //       we use it to visualize the normals of model for debug.
-        // TODO: 在完成了球谐系数计算后，你需要删除下列四行，这四行代码的作用是用来可视化模型法线
-        //if (c.isZero()) {
-        //    auto n_ = its.shFrame.n.cwiseAbs();
-        //    return Color3f(n_.x(), n_.y(), n_.z());
-        //}
         return c;
     }
 
