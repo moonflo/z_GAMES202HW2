@@ -32,7 +32,9 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							else mat = child.material;
 
 							var indices = Array.from({ length: geo.attributes.position.count }, (v, k) => k);
-
+							
+							// Here we only set basic attributes for render a obj, any extra attributes
+							// should declared in material block.
 							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
 								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
 								//{ name: 'aTextureCoord', array: geo.attributes.uv.array },
@@ -57,7 +59,18 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 									material = buildPhongMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/phongShader/phongVertex.glsl", "./src/shaders/phongShader/phongFragment.glsl");
 									shadowMaterial = buildShadowMaterial(light, Translation, Scale, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
 									break;
-								// TODO: Add your PRTmaterial here
+								
+								case 'PreComputeMaterial':
+									material = buildPreComputeMaterial(
+										"./src/shaders/envLightShader/precomputeVertex.glsl", 
+										"./src/shaders/envLightShader/precomputeFragment.glsl",
+										precomputeL[guiParams.envmapId]);
+									break;
+								
+									    //Edit Start
+								case 'PRTMaterial':
+									material = buildPRTMaterial("./src/shaders/prtShader/prtVertex.glsl", "./src/shaders/prtShader/prtFragment.glsl");
+									break;
 
 								case 'SkyBoxMaterial':
 									material = buildSkyBoxMaterial("./src/shaders/skyBoxShader/SkyBoxVertex.glsl", "./src/shaders/skyBoxShader/SkyBoxFragment.glsl");
