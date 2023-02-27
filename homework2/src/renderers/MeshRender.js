@@ -203,12 +203,17 @@ class MeshRender {
 		// Bind attribute mat3 - LT
 		const buf = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+		
+		// Send data bofore set its pointer? 
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(precomputeLT[guiParams.envmapId]), gl.STATIC_DRAW);
-	
+		
+		// For homework2 framework, we directly believe that the input material must contain the attribute of the
+		// aPrecomputeLT item. Actually I think it is necessary to use the branch structure to distinguish 
+		// different situations or set up a dedicated function to transmit attribute data.
 		for (var ii = 0; ii < 3; ++ii) {
 			gl.enableVertexAttribArray(this.shader.program.attribs['aPrecomputeLT'] + ii);
 			gl.vertexAttribPointer(this.shader.program.attribs['aPrecomputeLT'] + ii, 3, gl.FLOAT, false, 36, ii * 12);
-		}
+		} // Here we only use aPrecomputeLT as attribute 'Cause different vertices share the identical precomputeL
 
 		// Bind geometry information
 		this.bindGeometryInfo();
