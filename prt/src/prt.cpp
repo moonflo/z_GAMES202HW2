@@ -156,7 +156,7 @@ public:
     static constexpr int SHCoeffLength = (SHOrder + 1) * (SHOrder + 1);
 
     // Albedo usually should be passed to BRDF diffuse object, it's a 3D vector. I set it to 0.5 For convenience
-    static constexpr float albedo = 0.5f;
+    static constexpr float albedo = 0.99f;
     static constexpr float Pi = 3.1415926f;
 
     enum class Type
@@ -227,18 +227,18 @@ public:
                 Eigen::Array3d d = sh::ToVector(phi, theta);
                 const auto wi = Vector3f(d.x(), d.y(), d.z());
 
-                auto cosain = wi.normalized().dot(n.normalized());
+                double cosain = wi.normalized().dot(n.normalized());
                 if (m_Type == Type::Unshadowed)
                 {
                     // TODO: here you need to calculate unshadowed transport term of a given direction
-                    return cosain > 0 ? cosain : 0;
+                    return cosain > 0 ? cosain * albedo / M_PI : 0;
                 }
                 else
                 {
                     // TODO: here you need to calculate shadowed transport term of a given direction
                     Ray3f sampleRay(v, wi);
                     if (cosain > 0 && !scene->rayIntersect(sampleRay))
-                        return cosain;
+                        return cosain * albedo / M_PI;
                     else
                         return 0;
                 }
@@ -324,7 +324,7 @@ public:
                                         m_TransportSHCoeffs.col(idx.y()).coeffRef(j) * bary.y() +
                                         m_TransportSHCoeffs.col(idx.z()).coeffRef(j) * bary.z());
 
-                                    (*ExtraCoeffs)[j] += interpolateSH * cosain;
+                                    (*ExtraCoeffs)[j] += interpolateSH * cosain * albedo/ Pi;  // Not divide by PI
                                 }  // End of ExtraCoeffs calculation
                             }  // End of hiting situation
                         }
@@ -334,7 +334,7 @@ public:
                     // scale by the probability of a particular sample, which is
                     // 4pi/sample_side^2. 4pi for the surface area of a unit sphere, and
                     // 1/sample_side^2 for the number of samples drawn uniformly.
-                    double weight = 4.0 * M_PI / (sample_side * sample_side);
+                    double weight = 4.0 * M_PI / (sample_side * sample_side) ;
                     for (unsigned int j = 0; j < ExtraCoeffs->size(); j++)
                     {
                         (*ExtraCoeffs)[j] *= weight;
