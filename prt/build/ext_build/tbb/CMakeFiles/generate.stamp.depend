@@ -1,9 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/office_software/cmake/share/cmake-3.25/Modules/CMakeASMInformation.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/CMakeASM_MASMInformation.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/CheckCXXCompilerFlag.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/CheckCXXSourceRuns.cmake
-C:/office_software/cmake/share/cmake-3.25/Modules/Internal/CheckSourceRuns.cmake
-D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/build/CMakeFiles/3.25.1/CMakeASM_MASMCompiler.cmake
-D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/tbb/CMakeLists.txt
-D:/code_cpp/vs_proj/GAMES202/resouce/homework2/prt/ext/tbb/build/version_string.ver.in
