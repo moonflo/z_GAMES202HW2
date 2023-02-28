@@ -118,8 +118,6 @@ namespace ProjEnv
         for (int i = 0; i < SHNum; i++)
             SHCoeffiecents[i] = Eigen::Array3f(0);
 
-        // SumWeight is a factor should be area / num_samples ?
-        // float sumWeight = 0;
         for (int i = 0; i < 6; i++) // For every patch
         {
             for (int y = 0; y < height; y++) // For every pixel
@@ -127,6 +125,7 @@ namespace ProjEnv
                 for (int x = 0; x < width; x++)
                 {
                     // TODO: here you need to compute light sh of each face of cubemap of each pixel
+                    // start edit
                     Eigen::Vector3f dir = cubemapDirs[i * width * height + y * width + x];
                     int index = (y * width + x) * channel;
                     Eigen::Array3f Le(images[i][index + 0], images[i][index + 1],
@@ -141,6 +140,7 @@ namespace ProjEnv
                             double SHBasicFucValue = sh::EvalSH(l, m, newDir.normalized());
                             SHCoeffiecents[sh::GetIndex(l, m)] += SHBasicFucValue * Le * deltaW;
                         }
+                    // end edit
                 }
             }
         }
@@ -155,8 +155,8 @@ public:
     static constexpr int SHOrder = 2;
     static constexpr int SHCoeffLength = (SHOrder + 1) * (SHOrder + 1);
 
-    // Albedo usually should be passed to BRDF diffuse object, it's a 3D vector. I set it to 0.5 For convenience
-    static constexpr float albedo = 0.99f;
+    // rho usually should be passed to BRDF diffuse object, it's a 3D vector. I set it to 0.5 For convenience
+    static constexpr float rho = 0.99f;
     static constexpr float Pi = 3.1415926f;
 
     enum class Type
@@ -227,18 +227,18 @@ public:
                 Eigen::Array3d d = sh::ToVector(phi, theta);
                 const auto wi = Vector3f(d.x(), d.y(), d.z());
 
-                double cosain = wi.normalized().dot(n.normalized());
+                double cosine = wi.normalized().dot(n.normalized());
                 if (m_Type == Type::Unshadowed)
                 {
                     // TODO: here you need to calculate unshadowed transport term of a given direction
-                    return cosain > 0 ? cosain * albedo / M_PI : 0;
+                    return cosine > 0 ? cosine * rho / M_PI : 0;
                 }
                 else
                 {
                     // TODO: here you need to calculate shadowed transport term of a given direction
                     Ray3f sampleRay(v, wi);
-                    if (cosain > 0 && !scene->rayIntersect(sampleRay))
-                        return cosain * albedo / M_PI;
+                    if (cosine > 0 && !scene->rayIntersect(sampleRay))
+                        return cosine * rho / M_PI;
                     else
                         return 0;
                 }
@@ -274,10 +274,6 @@ public:
                     // This is the approach demonstrated in [1] and is useful for arbitrary
                     // functions on the sphere that are represented analytically.
                     const int sample_side = static_cast<int>(floor(sqrt(m_SampleCount)));
-                    //std::unique_ptr<std::vector<double>> coeffs(new std::vector<double>());
-                    //coeffs->assign(GetCoefficientCount(order), 0.0);
-
-
 
                     // A vector to store the extraCoeffs term of one singel shading point.
                     std::unique_ptr<std::vector<double>> ExtraCoeffs(new std::vector<double>());
@@ -305,12 +301,12 @@ public:
                             // Using random phi and theta to make a sampling ray
                             auto d = sh::ToVector(phi, theta);
                             const auto wi = Vector3f(d.x(), d.y(), d.z());
-                            auto cosain = wi.normalized().dot(n.normalized());
+                            auto cosine = wi.normalized().dot(n.normalized());
                             Ray3f sampleRay(v, wi);
                             Intersection its;
 
                             // If hit a triangle
-                            if (cosain > 0 && scene->rayIntersect(sampleRay, its))
+                            if (cosine > 0 && scene->rayIntersect(sampleRay, its))
                             {
                                 //std::cout << " Hit ";
                                 Point3f idx = its.tri_index;
@@ -324,7 +320,7 @@ public:
                                         m_TransportSHCoeffs.col(idx.y()).coeffRef(j) * bary.y() +
                                         m_TransportSHCoeffs.col(idx.z()).coeffRef(j) * bary.z());
 
-                                    (*ExtraCoeffs)[j] += interpolateSH * cosain * albedo/ Pi;  // Not divide by PI
+                                    (*ExtraCoeffs)[j] += interpolateSH * cosine * rho / Pi;  // Not divide by PI
                                 }  // End of ExtraCoeffs calculation
                             }  // End of hiting situation
                         }
